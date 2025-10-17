@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Distributor Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --primary: #000000;
+      --secondary: #46a0fa;
+      --danger: #d22c27;
+      --success: #28a745;
+      --card-bg: #fff;
+      --border-radius: 12px;
+      --shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      color: #333;
+    }
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 16px;
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    main { padding: 20px; max-width: 1000px; margin: auto; }
+
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+h2 { margin-bottom: 12px; font-size: 1.3rem; }
+
+input, button {
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  width: 100%;
+  font-size: 1rem;
+}
+button {
+  background: var(--secondary);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+}
+button:hover { background: #2680e8; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+th { background: #f0f0f0; }
+
+.status-paid { color: var(--success); font-weight: bold; }
+
+  .footer {
+  background: #f9f9f9;
+  color: #000000;
+  text-align: center;
+  padding: 10px 16px;
+  font-size: 0.97rem;
+  font-weight: 450;
+  border-top: 1px solid #ddd;
+}
+.footer a {
+  color: #292929;
+  font-weight: 600;
+  text-decoration: none;
+}
+.footer a:hover { text-decoration: underline; }
+
+  </style>
+</head>
+<body>
+  <header>Distributor Panel</header>
+  <main>
+    <!-- Current Payable -->
+    <div class="card">
+      <h2>Current Amount Owed</h2>
+      <p id="currentOwed" style="font-size:1.2rem;font-weight:bold;">₹0</p>
+    </div>
+
+```
+<!-- Payment Form -->
+<div class="card">
+  <h2>Record Payment</h2>
+  <form id="paymentForm">
+    <input type="number" id="amountReceived" placeholder="Enter amount received" required min="1" step="1">
+    <button type="submit">Mark as Received</button>
+  </form>
+</div>
+
+<!-- History -->
+<div class="card">
+  <h2>Payment History</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody id="historyTable"></tbody>
+  </table>
+</div>
+```
+
+  </main>
+
+  <script type="module">
+    import { db } from "./firebase-config.js";
+    import { doc, getDoc, updateDoc, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    const currentOwedEl = document.getElementById("currentOwed");
+    const paymentForm = document.getElementById("paymentForm");
+    const amountReceivedEl = document.getElementById("amountReceived");
+    const historyTable = document.getElementById("historyTable");
+
+    const payDocRef = doc(db, "payments", "sanseoul");
+    const historyColRef = collection(payDocRef, "history");
+
+    // Listen for owed amount updates
+    async function loadCurrentOwed() {
+      const snap = await getDoc(payDocRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        currentOwedEl.textContent = `₹${data.balance || 0}`;
+      }
+    }
+
+    // Realtime updates
+    onSnapshot(payDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        currentOwedEl.textContent = `₹${data.balance || 0}`;
+      }
+    });
+
+    // Payment form submit
+    paymentForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const amount = parseFloat(amountReceivedEl.value);
+      if (!amount || amount <= 0) return;
+
+      const paySnap = await getDoc(payDocRef);
+      if (!paySnap.exists()) return alert("No distributor record found.");
+      const currentPay = paySnap.data().balance || 0;
+
+      const newPay = Math.max(0, currentPay - amount);
+      await updateDoc(payDocRef, {
+        balance: newPay,
+        updatedAt: serverTimestamp()
+      });
+
+      // Store history record
+      await addDoc(historyColRef, {
+        amount,
+        createdAt: serverTimestamp()
+      });
+
+      amountReceivedEl.value = "";
+    });
+
+    // Load history
+    onSnapshot(historyColRef, (snapshot) => {
+      historyTable.innerHTML = snapshot.docs
+        .map(doc => {
+          const d = doc.data();
+          const dateStr = d.createdAt?.toDate
+            ? d.createdAt.toDate().toLocaleString()
+            : "-";
+          return `
+            <tr>
+              <td>${dateStr}</td>
+              <td>₹${d.amount}</td>
+            </tr>
+          `;
+        })
+        .join("");
+    });
+
+    loadCurrentOwed();
+  </script>
+
+</body>
+</html>

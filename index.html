@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Store Sales Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --primary: #000000;
+      --secondary: #46a0fa;
+      --price: #d22c27;
+      --buttons: #46a0fa;
+      --accent: #FFD166;
+      --background: #e4eae4;
+      --text: #292F36;
+      --card-bg: #FFFFFF;
+      --border-radius: 12px;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s ease;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+    html,body { height:100%; }
+    body {
+      background: var(--background);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background-color: var(--primary);
+      color: white;
+      height: 90px;
+      padding: 10px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 70px;
+    }
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 20px;
+      padding: 18px;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    @media(max-width: 980px){ main { padding: 12px; grid-template-rows: auto 1fr; } }
+    .btn { padding: 10px 16px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: var(--transition); box-shadow: var(--shadow); }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: #FF6400; }
+    .btn-danger { background: #b3231f; color: #fff; height: 40px; }
+    .btn-toggle { background: #FF6400; color: #fff; width: 50%; height: 70px; font-size: large; }
+    .btn-toggle:hover { background: #303030; }
+    .btn-ghost { background: #fff3f3; color: var(--primary); border: 1px solid #ffd0d0; }
+    .btn-print { background: #2d7a2d; color: #fff; }
+    h2.section-title { font-size: 2rem; font-weight: 700; margin: 12px 0 16px; text-align: center; color:#1b1b1b; }
+
+    .place-order { background: var(--card-bg); padding: 16px; border-radius: var(--border-radius); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px; min-height: 220px; }
+    .table-buttons { display:flex; flex-wrap:wrap; gap:10px; }
+    .table-btn { background: #f5f5f5; border: 1px solid #e4e6eb; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .table-btn.active { background: var(--primary); color:#fff; border-color: var(--primary); }
+
+    .menu-list { display: none; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 10px; }
+    .menu-item { display: flex; justify-content: space-between; align-items: center; background: #fafafa; padding: 10px; border-radius: 10px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.03); gap:12px; }
+    .menu-item label { font-weight: 500; margin-right: 6px; }
+
+    /* Qty control */
+    .qty-control { display:flex; align-items:center; gap:6px; background:#fff; border:1px solid #ddd; padding:4px 6px; border-radius:8px; }
+    .qty-btn { background:#f0f0f0; border:none; width:30px; height:30px; border-radius:6px; cursor:pointer; font-weight:700; }
+    .qty-btn:hover { background:#e6e6e6; }
+    .qty-value { min-width:26px; text-align:center; font-weight:700; display:inline-block; }
+
+    /* price override */
+    .price-override { width:90px; padding:6px; border:1px solid #ccc; border-radius:8px; font-size:1rem; }
+
+    /* Selected items preview */
+    .selected-items { display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+    .selected-card { background:#fff; padding:10px; border-radius:10px; box-shadow:var(--shadow); display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .remove-btn { background:#ffecec; border:none; color:var(--price); padding:6px 10px; border-radius:8px; cursor:pointer; font-weight:700; }
+
+    /* History (previously Active orders) */
+    .right-column { display:flex; flex-direction:column; gap:12px; }
+    .search-row { display:flex; gap:10px; align-items:center; }
+    .search-input { flex:1; padding:10px 12px; border-radius:10px; border:1px solid #e4e6eb; background:#fff; }
+
+    .orders-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap: 16px; align-items:start; }
+    @media(max-width: 980px){ .orders-grid { grid-template-columns: 1fr; } }
+
+    .order-card { background: var(--card-bg); border-radius: var(--border-radius); box-shadow: var(--shadow); padding: 14px; display:flex; flex-direction:column; gap:10px; min-height:120px; }
+    .order-head { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .order-id { font-weight:700; color:var(--primary); }
+    .status{ font-size:0.8rem; padding:6px 10px; border-radius:999px; background:#e8f9e8; border:1px solid #a8e6a8; color:#0f8f0f; font-weight:700; }
+    .order-body p{ margin:0; font-size:0.95rem; }
+    .order-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+
+    /* toast */
+    .toast{ position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.85); color:#fff; padding:10px 16px; border-radius:16px; opacity:0; transition:opacity .25s; z-index:1000;}
+    .toast.show{ opacity:1; }
+
+    /* logout */
+    .logout-container{ position:absolute; right:16px; top:18px; }
+    .logout-btn{ background:var(--price); color:#fff; border:none; padding:8px 12px; border-radius:18px; cursor:pointer; font-weight:700; }
+
+    /* invoice print styling */
+    @media print {
+      body * { visibility: hidden; }
+      #invoicePrint, #invoicePrint * { visibility: visible; }
+      #invoicePrint { position: absolute; top: 0; left: 0; width: 100%; padding:20px; }
+    }
+  .footer {
+  background: #f9f9f9;
+  color: #000000;
+  text-align: center;
+  padding: 10px 16px;
+  font-size: 0.97rem;
+  font-weight: 450;
+  border-top: 1px solid #ddd;
+}
+.footer a {
+  color: #FF6400;
+  font-weight: 600;
+  text-decoration: none;
+}
+.footer a:hover { text-decoration: underline; }
+.logo {
+      position: absolute;
+      left: 20px;
+      max-height: 30px;
+      height: auto;
+      width: auto;
+    }
+    .logol {
+      position: absolute;
+      right: 140px;
+      max-height: 70px;
+      height: auto;
+      width: auto;
+    }
+  </style>
+</head>
+<body>
+  <!-- protect page -->
+  <script type="module" src="auth-guard.js"></script>
+
+  <header>
+    <img src="Sanseoul.png" alt="Logo" class="logo">
+    <h1>Store Sales Panel</h1>
+    
+    <div class="logout-container">
+      <button id="logoutBtn" class="logout-btn">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- TOP: Record Sale -->
+    <section class="place-order" aria-labelledby="place-order-title">
+      <h2 id="place-order-title" class="section-title">Record Sale</h2>
+
+      <div style="display:flex; gap:10px;">
+        <button id="toggleMenu" class="btn btn-toggle">🧾 Add Items</button>
+        <button id="clearSelection" class="btn btn-ghost">Clear</button>
+      </div>
+
+      <div class="menu-list" id="menuList" aria-live="polite"></div>
+
+      <!-- Selected items preview -->
+      <div>
+        <h3 style="margin:6px 0 8px; font-size:1rem;">Selected Items</h3>
+        <div id="selectedItems" class="selected-items"></div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; align-items:center;">
+        <select id="paymentMethod" class="btn btn-primary" style="flex:1; max-width:160px;">
+          <option value="">Select Payment</option>
+          <option value="cash">Cash</option>
+          <option value="online">Online</option>
+        </select>
+        <button id="placeOrderBtn" class="btn btn-danger" style="flex:1;">✅ Record Sale</button>
+        <div style="min-width:160px; text-align:right; color:#b3231f; font-weight:700;">
+          <div>Total:</div>
+          <div id="runningTotal">₹0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BOTTOM: Today's Sales -->
+    <aside class="right-column" aria-labelledby="history-title">
+      <div class="search-row" style="display:none;">
+        <input id="searchCode" class="search-input" placeholder="Search sale code (e.g. ORD-1234)" />
+        <button id="findBtn" class="btn btn-primary">Find</button>
+      </div>
+
+      <h2 id="history-title" class="section-title">Today’s Sales</h2>
+      <div id="orders" class="orders-grid" aria-live="polite"></div>
+    </aside>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- print target -->
+  <div id="invoicePrint" style="display:none;"></div>
+
+  <script type="module">
+import { auth, db } from "./firebase-config.js";
+import { signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+import {
+  collection, query, onSnapshot, getDocs, addDoc, doc, deleteDoc, serverTimestamp, where, updateDoc
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+// Logout
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  try {
+    await signOut(auth);
+    window.location.href = "login.html";
+  } catch (e) {
+    console.error(e);
+  }
+});
+
+const menuList = document.getElementById("menuList");
+const selectedItemsDiv = document.getElementById("selectedItems");
+const toast = document.getElementById("toast");
+const runningTotalEl = document.getElementById("runningTotal");
+const ordersDiv = document.getElementById("orders");
+const toggleMenuBtn = document.getElementById("toggleMenu");
+const clearSelectionBtn = document.getElementById("clearSelection");
+const placeOrderBtn = document.getElementById("placeOrderBtn");
+const paymentMethodEl = document.getElementById("paymentMethod");
+
+let menuItemsLoaded = [];
+let groupedItems = {}; // new: grouped by name
+let selectedDesigns = {}; // name → selected design ID
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(()=> toast.classList.remove("show"), 1400);
+}
+
+// Toggle menu panel
+toggleMenuBtn.addEventListener("click", () => {
+  menuList.style.display = menuList.style.display === "flex" ? "none" : "flex";
+});
+clearSelectionBtn.addEventListener("click", resetSelectionUI);
+
+// Load menu items from Firestore
+async function loadMenu(){
+  menuList.innerHTML = "";
+  menuItemsLoaded = [];
+  groupedItems = {};
+  const snap = await getDocs(collection(db, "menu"));
+  snap.forEach(docSnap=>{
+    const data = docSnap.data();
+    const id = docSnap.id;
+    const name = data.name.trim();
+    if(!groupedItems[name]) groupedItems[name] = [];
+    groupedItems[name].push({
+      id,
+      name,
+      price: Number(data.price||0),
+      sprice: Number(data.sprice||0),
+      design: data.design || "Default"
+    });
+  });
+
+  Object.keys(groupedItems).forEach(name=>{
+    const designs = groupedItems[name];
+    const main = designs[0];
+    const row = document.createElement("div");
+    row.className = "menu-item";
+    row.innerHTML = `
+      <label style="flex:1">
+        <input type="checkbox" data-name="${escapeHtml(name)}" data-price="${main.price}" data-sprice="${main.sprice}">
+        ${escapeHtml(name)} (₹${main.price})
+      </label>
+      ${designs.length > 1 ? `<button class="select-design-btn" type="button" style="background:#f5f5f5;border:1px solid #ccc;border-radius:4px;padding:4px 8px;">Select Design</button>` : ""}
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="number" class="price-override" placeholder="₹ price" />
+        <div class="qty-control" aria-hidden="false">
+          <button class="qty-btn dec" type="button">−</button>
+          <span class="qty-value">1</span>
+          <button class="qty-btn inc" type="button">+</button>
+        </div>
+      </div>
+    `;
+
+    const cb = row.querySelector("input[type=checkbox]");
+    const dec = row.querySelector(".dec");
+    const inc = row.querySelector(".inc");
+    const qtyVal = row.querySelector(".qty-value");
+    const override = row.querySelector(".price-override");
+
+    dec.addEventListener("click", () => {
+      let v = Math.max(1, parseInt(qtyVal.textContent || "1") - 1);
+      qtyVal.textContent = v;
+      updateSelectedPreview();
+    });
+    inc.addEventListener("click", () => {
+      let v = parseInt(qtyVal.textContent || "1") + 1;
+      qtyVal.textContent = v;
+      updateSelectedPreview();
+    });
+    cb.addEventListener("change", () => updateSelectedPreview());
+    override.addEventListener("input", () => updateSelectedPreview());
+
+    const selectBtn = row.querySelector(".select-design-btn");
+    if(selectBtn){
+      selectBtn.addEventListener("click", () => openDesignPopup(name, designs));
+    }
+
+    menuList.appendChild(row);
+    menuItemsLoaded.push(...designs);
+  });
+}
+
+// Popup for design selection
+function openDesignPopup(name, designs){
+  const overlay = document.createElement("div");
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.background = "rgba(0,0,0,0.45)";
+  overlay.style.display = "flex";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  overlay.style.zIndex = "999";
+
+  const popup = document.createElement("div");
+  popup.style.background = "#fff";
+  popup.style.padding = "20px";
+  popup.style.borderRadius = "10px";
+  popup.style.boxShadow = "0 0 15px rgba(0,0,0,0.3)";
+  popup.style.maxWidth = "320px";
+  popup.style.width = "90%";
+  popup.innerHTML = `
+    <h3 style="margin-bottom:10px;">Select Design for ${escapeHtml(name)}</h3>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      ${designs.map(d=>`
+        <button class="design-option" data-id="${d.id}" style="padding:6px 10px;border:1px solid #ccc;border-radius:6px;background:#f9f9f9;">
+          ${escapeHtml(d.design)} — ₹${d.price}
+        </button>
+      `).join("")}
+    </div>
+    <div style="text-align:right;margin-top:12px;">
+      <button id="closeDesignPopup" style="background:#333;color:#fff;padding:6px 12px;border:none;border-radius:6px;">Close</button>
+    </div>
+  `;
+
+  overlay.appendChild(popup);
+  document.body.appendChild(overlay);
+
+  popup.querySelectorAll(".design-option").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const id = btn.dataset.id;
+      selectedDesigns[name] = id;
+      showToast(`Selected ${btn.textContent.trim()}`);
+      document.body.removeChild(overlay);
+      updateSelectedPreview();
+    });
+  });
+
+  popup.querySelector("#closeDesignPopup").addEventListener("click", ()=>{
+    document.body.removeChild(overlay);
+  });
+}
+
+// escape HTML
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Update selected preview cards & running total
+function updateSelectedPreview(){
+  selectedItemsDiv.innerHTML = "";
+  let total = 0;
+  const checked = menuList.querySelectorAll("input[type=checkbox]:checked");
+  checked.forEach(cb=>{
+    const row = cb.closest(".menu-item");
+    const name = cb.dataset.name;
+    const selectedId = selectedDesigns[name] || (groupedItems[name]?.[0]?.id || "");
+    const itemData = menuItemsLoaded.find(i=>i.id===selectedId) || {};
+    const defaultPrice = Number(cb.dataset.price || itemData.price || 0);
+    const overrideVal = row.querySelector(".price-override").value;
+    const price = (overrideVal !== "") ? Number(overrideVal || 0) : defaultPrice;
+    const qty = Number(row.querySelector(".qty-value").textContent || 1);
+    total += price * qty;
+
+    const card = document.createElement("div");
+    card.className = "selected-card";
+    card.innerHTML = `<div style="display:flex;flex-direction:column;gap:4px;">
+        <span>${name} ${itemData.design ? `(${itemData.design})` : ""} × ${qty}</span>
+        <small style="color:#666">₹${price} each</small></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <strong>₹${price*qty}</strong>
+        <button class="remove-btn" aria-label="remove item">Remove</button>
+      </div>`;
+
+    card.querySelector(".remove-btn").addEventListener("click", () => {
+      cb.checked = false;
+      row.querySelector(".qty-value").textContent = "1";
+      row.querySelector(".price-override").value = "";
+      delete selectedDesigns[name];
+      updateSelectedPreview();
+    });
+
+    selectedItemsDiv.appendChild(card);
+  });
+  runningTotalEl.textContent = `₹${total}`;
+}
+
+function resetSelectionUI(){
+  menuList.style.display = "none";
+  menuList.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = false);
+  menuList.querySelectorAll(".qty-value").forEach(q => q.textContent = "1");
+  menuList.querySelectorAll(".price-override").forEach(i => i.value = "");
+  selectedItemsDiv.innerHTML = "";
+  runningTotalEl.textContent = "₹0";
+  paymentMethodEl.value = "";
+  selectedDesigns = {};
+}
+
+// Record Sale + update Inventory
+placeOrderBtn.addEventListener("click", async () => {
+  const checked = Array.from(menuList.querySelectorAll("input[type=checkbox]:checked"));
+  if (!checked.length) { alert("Select at least one item"); return; }
+  if (!paymentMethodEl.value) { alert("Select payment method"); return; }
+
+  const items = checked.map(cb => {
+    const row = cb.closest(".menu-item");
+    const name = cb.dataset.name;
+    const selectedId = selectedDesigns[name] || (groupedItems[name]?.[0]?.id || "");
+    const itemData = menuItemsLoaded.find(i=>i.id===selectedId) || {};
+    const defaultPrice = Number(cb.dataset.price || itemData.price || 0);
+    const overrideVal = row.querySelector(".price-override").value;
+    const price = (overrideVal !== "") ? Number(overrideVal || 0) : defaultPrice;
+    const qty = Number(row.querySelector(".qty-value").textContent || 1);
+    const sprice = Number(cb.dataset.sprice || itemData.sprice || 0);
+    return { id: selectedId, name, design: itemData.design || "Default", price, sprice, quantity: qty };
+  });
+
+  const total = items.reduce((s,i) => s + (i.price * i.quantity), 0);
+  const orderCode = "ORD-" + String(Math.floor(Math.random()*9000)+1000);
+
+  await addDoc(collection(db, "orders"), {
+    orderCode,
+    items,
+    totalAmount: total,
+    paymentStatus: "paid",
+    status: "completed",
+    paymentMethod: paymentMethodEl.value,
+    createdAt: serverTimestamp()
+  });
+
+  // Update Inventory
+  for (const it of items) {
+    const invQuery = query(collection(db,"Inventory"), where("article","==",it.name));
+    const snap = await getDocs(invQuery);
+    for (const invDoc of snap.docs) {
+      const invRef = doc(db, "Inventory", invDoc.id);
+      const current = invDoc.data().currentQuantity || 0;
+      const newQty = Math.max(0, current - it.quantity);
+      await updateDoc(invRef, { currentQuantity: newQty });
+    }
+  }
+
+  showToast("Sale recorded & inventory updated");
+  resetSelectionUI();
+});
+
+// ---- Existing order display & print code below (made safe) ----
+const today = new Date();
+today.setHours(0,0,0,0);
+const ordersQuery = query(collection(db, "orders"), where("createdAt", ">=", today));
+onSnapshot(ordersQuery, (snap) => {
+  const list = [];
+  snap.forEach(docSnap=>{
+    const data = docSnap.data();
+    data.id = docSnap.id;
+    list.push(data);
+  });
+  list.sort((a,b)=> (b.createdAt?.toMillis?.() || 0) - (a.createdAt?.toMillis?.() || 0));
+  renderOrders(list);
+});
+
+function renderOrders(orders){
+  ordersDiv.innerHTML = "";
+  if (!orders.length) {
+    ordersDiv.innerHTML = `<div class="order-card"><p style="color:#666">No sales today.</p></div>`;
+    return;
+  }
+  orders.forEach(order=>{
+    const itemsText = (order.items || []).map(it => `${it.name}${it.design ? "("+it.design+")" : ""} x ${it.quantity}`).join(", ");
+    const total = order.totalAmount || (order.items || []).reduce((s,i)=>s+(i.price*(i.quantity||1)),0);
+    const orderForPrint = {
+      id: order.id,
+      orderCode: order.orderCode,
+      items: order.items || [],
+      totalAmount: total,
+      paymentMethod: order.paymentMethod || "cash",
+      paymentStatus: order.paymentStatus || "paid",
+      createdAtMillis: order.createdAt?.toMillis?.() || Date.now()
+    };
+
+    // Build card DOM safely (no inline onclick)
+    const card = document.createElement("div");
+    card.className = "order-card";
+
+    const innerHTML = `
+      <div class="order-head">
+        <div>
+          <div class="order-id">${order.orderCode || "-"}</div>
+          <div style="font-size:.9rem;color:#666">Items: ${order.items?.length || 0}</div>
+        </div>
+        <div><span class="status">${order.paymentMethod || "Paid"}</span></div>
+      </div>
+
+      <div class="order-body">
+        <p><strong>Items:</strong> ${itemsText || "-"}</p>
+        <p><strong>Total:</strong> ₹${total}</p>
+        <p style="font-size:0.85rem;color:#666;margin-top:6px;">
+          <strong>Date:</strong> ${order.createdAt ? new Date(order.createdAt.toMillis()).toLocaleString() : "N/A"}
+        </p>
+      </div>
+    `;
+    card.innerHTML = innerHTML;
+
+    const actions = document.createElement("div");
+    actions.className = "order-actions";
+
+    const printBtn = document.createElement("button");
+    printBtn.className = "btn btn-print";
+    printBtn.type = "button";
+    printBtn.textContent = "🖨 Print Invoice";
+    printBtn.addEventListener("click", () => {
+      // Call printInvoice with an object (safer than embedding in HTML)
+      printInvoice(orderForPrint);
+    });
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "btn btn-ghost";
+    delBtn.type = "button";
+    delBtn.textContent = "Delete";
+    delBtn.addEventListener("click", async () => {
+      if(!confirm("Delete sale?")) return;
+      try {
+        await deleteDoc(doc(db,"orders",order.id));
+        showToast("Sale deleted");
+      } catch (e) { console.error(e); showToast("Delete failed"); }
+    });
+
+    actions.appendChild(printBtn);
+    actions.appendChild(delBtn);
+
+    card.appendChild(actions);
+    ordersDiv.appendChild(card);
+  });
+}
+
+// keep deleteOrder available if other parts of code call it (still works)
+window.deleteOrder = async function(id){
+  if(!confirm("Delete sale?")) return;
+  try {
+    await deleteDoc(doc(db,"orders",id));
+    showToast("Sale deleted");
+  } catch (e) { console.error(e); showToast("Delete failed"); }
+};
+
+// printInvoice now accepts either an encoded string (old) or a plain object
+window.printInvoice = function(orderEncodedOrObj){
+  try {
+    let order;
+    if (typeof orderEncodedOrObj === "string") {
+      // old behaviour: encoded string
+      try {
+        order = JSON.parse(decodeURIComponent(orderEncodedOrObj));
+      } catch (err) {
+        // maybe plain JSON (not encoded)
+        order = JSON.parse(orderEncodedOrObj);
+      }
+    } else if (typeof orderEncodedOrObj === "object" && orderEncodedOrObj !== null) {
+      order = orderEncodedOrObj;
+    } else {
+      throw new Error("Unsupported order format");
+    }
+
+    const invoiceDiv = document.getElementById("invoicePrint");
+    if(!invoiceDiv){
+      console.error("invoicePrint element not found in DOM");
+      showToast("Invoice container missing");
+      return;
+    }
+
+    const createdAt = new Date(order.createdAtMillis);
+    const dateStr = createdAt.toLocaleDateString() + " " + createdAt.toLocaleTimeString();
+    const itemsHtml = (order.items || []).map((it, i) => {
+      const price = Number(it.price || 0);
+      const qty = Number(it.quantity || 0);
+      return `<tr>
+        <td style="border:1px solid #e2e2e2;padding:8px;text-align:center">${i+1}</td>
+        <td style="border:1px solid #e2e2e2;padding:8px">${escapeHtml(it.name)} ${it.design ? '('+escapeHtml(it.design)+')' : ''}</td>
+        <td style="border:1px solid #e2e2e2;padding:8px;text-align:center">${qty}</td>
+        <td style="border:1px solid #e2e2e2;padding:8px;text-align:right">₹${price.toFixed(2)}</td>
+        <td style="border:1px solid #e2e2e2;padding:8px;text-align:right">₹${(price*qty).toFixed(2)}</td>
+      </tr>`;
+    }).join("");
+    const taxVal = 0;
+    const subtotal = Number(order.totalAmount || 0);
+    const taxAmount = +(subtotal * taxVal / 100).toFixed(2);
+    const grandTotal = +(subtotal + taxAmount).toFixed(2);
+    invoiceDiv.style.display = "block";
+    invoiceDiv.innerHTML = `
+      <div style="font-family:Inter,Segoe UI,Arial,sans-serif;max-width:760px;margin:18px auto;border:1px solid #e6e6e6;padding:22px;border-radius:10px;color:#222;background:#fff">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div>
+            <h2 style="margin:0;">Unique men's Wear</h2>
+            <div style="color:#666">Roshan Gate • Aurangabad, Maharashtra,431001.</div>
+            <div style="color:#666">Phone: 9766035386</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:700">INVOICE</div>
+            <div style="color:#666"># ${escapeHtml(order.orderCode || '')}</div>
+            <div style="color:#666">${dateStr}</div>
+          </div>
+        </div>
+
+        <table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:14px">
+          <thead>
+            <tr style="background:#fafafa">
+              <th style="border:1px solid #e2e2e2;padding:8px;text-align:center">#</th>
+              <th style="border:1px solid #e2e2e2;padding:8px;text-align:left">Item</th>
+              <th style="border:1px solid #e2e2e2;padding:8px;text-align:center">Qty</th>
+              <th style="border:1px solid #e2e2e2;padding:8px;text-align:right">Price</th>
+              <th style="border:1px solid #e2e2e2;padding:8px;text-align:right">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+
+        <div style="display:flex;justify-content:flex-end;margin-top:12px">
+          <table style="border-collapse:collapse;width:320px">
+            <tr><td style="padding:6px 8px;color:#666">Subtotal</td><td style="padding:6px 8px;text-align:right">₹${subtotal.toFixed(2)}</td></tr>
+            <tr><td style="padding:6px 8px;color:#666">Tax (${taxVal}%)</td><td style="padding:6px 8px;text-align:right">₹${taxAmount.toFixed(2)}</td></tr>
+            <tr style="border-top:2px solid #eee"><td style="padding:8px 8px;font-weight:700">Grand Total</td><td style="padding:8px 8px;text-align:right;font-weight:700">₹${grandTotal.toFixed(2)}</td></tr>
+          </table>
+        </div>
+        <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
+          <div style="color:#666">Payment: <strong>${escapeHtml(order.paymentMethod || '')}</strong> (${escapeHtml(order.paymentStatus || '')})</div>
+          <div style="color:#666">Thank you for your business!</div>
+        </div>
+      </div>
+    `;
+    window.print();
+    setTimeout(()=>{ invoiceDiv.style.display = "none"; invoiceDiv.innerHTML = ""; }, 500);
+  } catch (e) {
+    console.error("printInvoice error", e);
+    showToast("Failed to generate invoice");
+  }
+};
+
+// initial load
+await loadMenu();
+resetSelectionUI();
+</script>
+
+
+  <footer class="footer">
+  <p>
+    Developed by 
+    <a href="https://unrealsolutions.pages.dev" target="_blank" rel="noopener noreferrer">UnrealSolutions</a> 
+    | Contact: <a href="mailto:info.unrealsolutions@gmail.com">info.unrealsolutions@gmail.com</a> | +91-7507374446 | +91-9529102559
+  </p>
+</footer>
+</body>
+</html>

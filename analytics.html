@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Analytics Dashboard</title>
+  <style>
+    :root {
+      --primary: #000000;
+      --secondary: #46a0fa;
+      --price: #d22c27;
+      --success: #1ee725;
+      --danger: #f72585;
+      --warning: #f8961e;
+      --info: #4895ef;
+      --light: #f8f9fa;
+      --dark: #212529;
+    }
+
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #e1e3e4;
+      margin: 0;
+      padding: 20px;
+      color: #334155;
+    }
+
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 16px;
+      text-align: center;
+      font-size: 2.5rem;
+      font-weight: 700;
+      position: relative;
+    }
+    
+    h1 { 
+      text-align: center; 
+      margin-bottom: 30px;
+      color: var(--dark);
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+    
+    .charts-container {
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .chart-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 25px;
+    }
+    
+    .card { 
+      background: rgb(255, 254, 254); 
+      padding: 25px; 
+      border-radius: 12px; 
+      max-width: 650px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    }
+    
+    .card h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: var(--dark);
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    
+    canvas { 
+      width: 100% !important; 
+      height: 300px !important;
+    }
+    
+    @media (max-width: 1024px) {
+      .chart-row { grid-template-columns: 1fr; }
+      .card { padding: 20px; }
+    }
+    
+    @media (max-width: 640px) {
+      .logout-container { position: absolute; top: 25px; right: 10px; }
+      #logoutBtn {
+        background: #d22c27;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: bold;
+        transition: background 0.3s;
+      }
+      #logoutBtn:hover { background: #a71d2a; }
+      .charts-container { gap: 20px; }
+      .card { padding: 15px; }
+      h1 { font-size: 1.5rem; margin-bottom: 20px; }
+      .card h3 { font-size: 1.1rem; margin-bottom: 15px; }
+    }
+
+    .logout-container { position:absolute; top: 10px; right: 30px; }
+    #logoutBtn {
+      background: #d22c27;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    #logoutBtn:hover { background: #a71d2a; }
+
+    .admin-nav {
+      background: var(--primary, #03045e);
+      color: white;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      top: 0;
+      z-index: 100;
+    }
+    .nav-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+    }
+    .nav-logo { font-weight: 700; font-size: 1.1rem; }
+    .nav-links { list-style: none; display: flex; gap: 18px; }
+    .nav-links a {
+      color: white; text-decoration: none; font-weight: 500;
+      padding: 6px 10px; border-radius: 6px; transition: background 0.2s;
+    }
+    .nav-links a:hover { background: rgba(255, 255, 255, 0.15); }
+    .nav-links a.active { color: #FF6400; font-weight: 700; }
+    .nav-toggle { display: none; font-size: 1.4rem; background: none; border: none; color: white; cursor: pointer; }
+    @media (max-width: 768px) {
+      .nav-links {
+        position: absolute; top: 56px; right: 0; background: var(--primary, #03045e);
+        flex-direction: column; width: 200px; padding: 10px; display: none;
+      }
+      .nav-links.show { display: flex; }
+      .nav-toggle { display: block; }
+    }
+      .footer {
+  background: #f9f9f9;
+  color: #000000;
+  text-align: center;
+  padding: 10px 16px;
+  font-size: 0.97rem;
+  font-weight: 450;
+  border-top: 1px solid #ddd;
+}
+.footer a {
+  color: #292929;
+  font-weight: 600;
+  text-decoration: none;
+}
+.footer a:hover { text-decoration: underline; }
+.logo {
+      position: absolute;
+      left: 20px;
+      top: 20px;
+      max-height: 30px;
+      height: auto;
+      width: auto;
+    }
+
+
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+</head>
+
+<body>
+  <script type="module" src="auth-guard.js"></script>
+  <header>
+    <img src="Sanseoul.png" alt="Logo" class="logo">
+    Analytics Dashboard
+    <div class="logout-container">
+      <button id="logoutBtn">Logout</button>
+    </div>
+  </header>
+  <nav class="admin-nav">
+    <div class="nav-container">
+      <div class="nav-logo">Sanseoul</div>
+
+      <button class="nav-toggle" id="navToggle">☰</button>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="admin-dashboard.html">Dashboard</a></li>
+        <li><a href="analytics.html">Analytics</a></li>
+        <li><a href="stock-manager.html">Stock Manager</a></li>
+        <li><a href="index.html">Order panel</a></li>
+      </ul>
+    </div>
+  </nav>
+  
+  <div class="charts-container">
+    <div class="chart-row">
+      <div class="card"><h3>Daily Orders (Last 7 Days)</h3><canvas id="dailyOrdersChart"></canvas></div>
+      <div class="card"><h3>Revenue Trend (Last 7 Days)</h3><canvas id="revenueTrendChart"></canvas></div>
+    </div>
+    <div class="chart-row">
+      <div class="card"><h3>Popular Items</h3><canvas id="popularItemsChart"></canvas></div>
+      <div class="card"><h3>Monthly Revenue (Last 6 Months)</h3><canvas id="monthlyRevenueChart"></canvas></div>
+    </div>
+    <div class="chart-row">
+      <div class="card" style="grid-column: span 2;">
+        <h3>Inventory: Added vs Current Quantity</h3>
+        <canvas id="inventoryChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("navToggle").onclick = () => {
+      document.getElementById("navLinks").classList.toggle("show");
+    };
+    const links = document.querySelectorAll(".nav-links a");
+    links.forEach(link => { if (link.href === window.location.href) link.classList.add("active"); });
+  </script>
+
+  <!-- Firebase v9 -->
+  <script type="module">
+    import { db } from "./firebase-config.js";
+    import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    function createGradient(ctx, c1, c2) {
+      const g = ctx.createLinearGradient(0, 0, 0, 300);
+      g.addColorStop(0, c1); g.addColorStop(1, c2); return g;
+    }
+    function formatDisplayDate(dateStr) {
+      return new Date(dateStr).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+    }
+    function formatDisplayMonth(monthStr) {
+      const [y, m] = monthStr.split("-"); 
+      return new Date(y, m-1).toLocaleDateString("en-US",{month:"short",year:"numeric"});
+    }
+    function formatMonth(date) {
+      if (!date) return null;
+      return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}`;
+    }
+    function generateColors(n) {
+      const c = ["rgba(67,97,238,0.8)","rgba(76,201,240,0.8)","rgba(248,150,30,0.8)","rgba(243,104,224,0.8)","rgba(72,149,239,0.8)","rgba(106,176,76,0.8)","rgba(247,37,133,0.8)"];
+      return Array.from({length:n},(_,i)=>c[i%c.length]);
+    }
+
+    const dailyOrdersChart = new Chart(document.getElementById("dailyOrdersChart").getContext("2d"), {
+      type:"bar", data:{labels:[],datasets:[{label:"Orders",data:[],backgroundColor:createGradient(document.getElementById("dailyOrdersChart").getContext("2d"),"rgba(67,97,238,0.8)","rgba(63,55,201,0.8)"),borderWidth:1,borderRadius:6}]},
+      options:{responsive:true,plugins:{legend:{display:false}}}, plugins:[ChartDataLabels]
+    });
+    const revenueTrendChart = new Chart(document.getElementById("revenueTrendChart").getContext("2d"), {
+      type:"line", data:{labels:[],datasets:[{label:"Revenue ₹",data:[],borderColor:"rgba(76,201,240,1)",backgroundColor:createGradient(document.getElementById("revenueTrendChart").getContext("2d"),"rgba(76,201,240,0.2)","rgba(76,201,240,0)"),fill:true,tension:0.4}]},
+      options:{responsive:true,plugins:{legend:{display:false}}}
+    });
+    const popularItemsCtx = document.getElementById("popularItemsChart").getContext("2d");
+    const popularItemsChart = new Chart(popularItemsCtx, {
+      type: "doughnut",
+      data: { labels: [], datasets: [{ label:"Items Sold", data:[], backgroundColor:[], borderWidth:0, hoverOffset:10 }] },
+      options: { responsive:true, maintainAspectRatio:false, cutout:"70%", plugins:{ legend:{position:"right"}, datalabels:{color:"#fff"} } },
+      plugins: [ChartDataLabels]
+    });
+    const monthlyRevenueChart = new Chart(document.getElementById("monthlyRevenueChart").getContext("2d"), {
+      type:"bar", data:{labels:[],datasets:[{label:"Revenue ₹",data:[],backgroundColor:createGradient(document.getElementById("monthlyRevenueChart").getContext("2d"),"rgba(248,150,30,0.8)","rgba(245,158,11,0.8)"),borderRadius:6}]},
+      options:{responsive:true,plugins:{legend:{display:false}}}
+    });
+
+    // New Inventory Chart
+    const inventoryChart = new Chart(document.getElementById("inventoryChart").getContext("2d"), {
+      type: "bar",
+      data: { labels: [], datasets: [
+        { label:"Added Quantity", data:[], backgroundColor:"rgba(67,97,238,0.8)", borderRadius:6 },
+        { label:"Current Quantity", data:[], backgroundColor:"rgba(76,201,240,0.8)", borderRadius:6 }
+      ]},
+      options: { responsive:true, plugins:{ legend:{position:"top"} }, scales:{ x:{ stacked:false }, y:{ beginAtZero:true } } }
+    });
+
+    // Orders snapshot
+    onSnapshot(collection(db,"orders"),(snap)=>{
+      const allOrders=snap.docs.map(d=>({id:d.id,...d.data()}));
+      const dailyOrdersMap={},revenueMap={},itemCounts={},monthlyRevenueMap={};
+      const today=new Date();
+      for(let i=6;i>=0;i--){const d=new Date();d.setDate(today.getDate()-i);const s=d.toISOString().split("T")[0];dailyOrdersMap[s]=0;revenueMap[s]=0;}
+      for(let i=5;i>=0;i--){const d=new Date(today.getFullYear(),today.getMonth()-i,1);monthlyRevenueMap[`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`]=0;}
+
+      allOrders.forEach(o=>{
+        const dateObj=o.createdAt?.toDate?o.createdAt.toDate():null;
+        if(!dateObj) return;
+        const dateStr=dateObj.toISOString().split("T")[0];
+        const monthStr=formatMonth(dateObj);
+        const total=o.totalAmount||(o.items?.reduce((s,i)=>s+(i.price||0)*(i.quantity||1),0)||0);
+        if(dailyOrdersMap.hasOwnProperty(dateStr)){ dailyOrdersMap[dateStr]+=1; if(o.status==="completed") revenueMap[dateStr]+=total; }
+        if(monthlyRevenueMap.hasOwnProperty(monthStr)&&o.status==="completed") monthlyRevenueMap[monthStr]+=total;
+        (o.items||[]).forEach(i=>{itemCounts[i.name]=(itemCounts[i.name]||0)+(i.quantity||1);});
+      });
+
+      dailyOrdersChart.data.labels=Object.keys(dailyOrdersMap).map(formatDisplayDate);
+      dailyOrdersChart.data.datasets[0].data=Object.values(dailyOrdersMap); dailyOrdersChart.update();
+      revenueTrendChart.data.labels=Object.keys(revenueMap).map(formatDisplayDate);
+      revenueTrendChart.data.datasets[0].data=Object.values(revenueMap); revenueTrendChart.update();
+      popularItemsChart.data.labels=Object.keys(itemCounts);
+      popularItemsChart.data.datasets[0].data=Object.values(itemCounts);
+      popularItemsChart.data.datasets[0].backgroundColor=generateColors(Object.keys(itemCounts).length);
+      popularItemsChart.update();
+      monthlyRevenueChart.data.labels=Object.keys(monthlyRevenueMap).map(formatDisplayMonth);
+      monthlyRevenueChart.data.datasets[0].data=Object.values(monthlyRevenueMap); monthlyRevenueChart.update();
+    });
+
+    // Inventory snapshot
+    onSnapshot(collection(db,"Inventory"),(snap)=>{
+      const inventory=snap.docs.map(d=>({id:d.id,...d.data()}));
+      const labels=inventory.map(i=>i.name||i.id);
+      const added=inventory.map(i=>i.addedQuantity||0);
+      const current=inventory.map(i=>i.currentQuantity||0);
+
+      inventoryChart.data.labels=labels;
+      inventoryChart.data.datasets[0].data=added;
+      inventoryChart.data.datasets[1].data=current;
+      inventoryChart.update();
+    });
+  </script>
+  
+</body>
+</html>

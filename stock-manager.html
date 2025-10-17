@@ -1,0 +1,412 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Stock Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --primary: #000000;
+      --secondary: #46a0fa;
+      --danger: #d22c27;
+      --success: #28a745;
+      --card-bg: #fff;
+      --border-radius: 12px;
+      --shadow: 0 4px 6px rgba(0,0,0,0.1);
+      --transition: all 0.3s ease;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      color: #333;
+    }
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 16px;
+      text-align: center;
+      font-size: 2.5rem;
+      font-weight: 700;
+      position: relative;
+    }
+    main { padding: 20px; max-width: 1000px; margin: auto; }
+
+    .form-box, .list, .payment-box {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      padding: 35px;
+      margin-bottom: 20px;
+    }
+    h2 { margin-bottom: 12px; font-size: 1.2rem; }
+
+    input, button, select {
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      width: 100%;
+      font-size: 1rem;
+    }
+    button {
+      background: var(--secondary);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+    button:hover { background: #2680e8; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+    th { background: #f0f0f0; }
+
+    .status-low { color: var(--danger); font-weight: bold; }
+    .status-ok { color: var(--success); font-weight: bold; }
+
+    .logout-container {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+    }
+    #logoutBtn {
+      background: #d22c27;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    #logoutBtn:hover { background: #a71d2a; }
+
+    .admin-nav {
+      background: var(--primary, #03045e);
+      color: white;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+    }
+    .nav-logo { font-weight: 700; font-size: 1.1rem; }
+    .nav-links { list-style: none; display: flex; gap: 18px; }
+    .nav-links a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      padding: 6px 10px;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    .nav-links a:hover { background: rgba(255, 255, 255, 0.15); }
+    .nav-links a.active { color: #FF6400; font-weight: 700; }
+    .nav-toggle { display: none; font-size: 1.4rem; background: none; border: none; color: white; cursor: pointer; }
+
+    @media (max-width: 768px) {
+      .nav-links {
+        position: absolute;
+        top: 56px;
+        right: 0;
+        background: var(--primary, #03045e);
+        flex-direction: column;
+        width: 200px;
+        padding: 10px;
+        display: none;
+      }
+      .nav-links.show { display: flex; }
+      .nav-toggle { display: block; }
+    }
+
+    .payment-total { font-size: 1.5rem; font-weight: bold; margin: 10px 0; }
+    .paid { color: var(--success); font-weight: bold; }
+    .unpaid { color: var(--danger); font-weight: bold; }
+
+    .size-options {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    .size-btn {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      background: #e0e0e0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .size-btn.selected {
+      background: var(--secondary);
+      color: white;
+    }
+    .footer {
+      background: #f9f9f9;
+      color: #000000;
+      text-align: center;
+      padding: 10px 16px;
+      font-size: 0.97rem;
+      font-weight: 450;
+      border-top: 1px solid #ddd;
+    }
+    .footer a {
+      color: #292929;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .footer a:hover { text-decoration: underline; }
+
+    .logo {
+      position: absolute;
+      left: 20px;
+      top: 20px;
+      max-height: 30px;
+      height: auto;
+      width: auto;
+    }
+  </style>
+</head>
+
+<body>
+  <script type="module" src="auth-guard.js"></script>
+  <header>
+    <img src="Sanseoul.png" alt="Logo" class="logo">
+    Stock Manager
+    <div class="logout-container">
+      <button id="logoutBtn">Logout</button>
+    </div>
+  </header>
+
+  <nav class="admin-nav">
+    <div class="nav-container">
+      <div class="nav-logo">Sanseoul</div>
+      <button class="nav-toggle" id="navToggle">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="admin-dashboard.html">Dashboard</a></li>
+        <li><a href="analytics.html">Analytics</a></li>
+        <li><a href="stock-manager.html">Stock Manager</a></li>
+        <li><a href="index.html">Order panel</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <!-- Add Stock -->
+    <div class="form-box">
+      <h2>Add Stock</h2>
+      <form id="stockForm">
+        <input type="date" id="date">
+        <input type="text" id="article" placeholder="Article" required>
+
+        <!-- Design Dropdown -->
+        <select id="designDropdown" required>
+          <option value="">Select Design</option>
+        </select>
+
+        <div class="size-options" id="sizeOptions">
+          <div class="size-btn" data-size="S">S</div>
+          <div class="size-btn" data-size="M">M</div>
+          <div class="size-btn" data-size="L">L</div>
+          <div class="size-btn" data-size="XL">XL</div>
+          <div class="size-btn" data-size="XXL">XXL</div>
+        </div>
+
+        <input type="number" id="price" placeholder="Price" required>
+        <input type="number" id="sprice" placeholder="Sanseoul Price" required>
+        <input type="number" id="quantity" placeholder="Added Quantity" required>
+
+        <button type="submit" style="background-color: #FF6400;">Add Stock</button>
+      </form>
+    </div>
+
+    <!-- Inventory List -->
+    <div class="list">
+      <h2>Inventory</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Article</th>
+            <th>Design</th>
+            <th>Size</th>
+            <th>Added Quantity</th>
+            <th>Current Quantity</th>
+            <th>Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="inventoryList"></tbody>
+      </table>
+    </div>
+
+    <!-- Sanseoul Payment Section -->
+    <div class="payment-box">
+      <h2>Sanseoul Payment</h2>
+      <div class="payment-total">Payment Balance: ₹<span id="balance">0</span></div>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById("navToggle").onclick = () => {
+      document.getElementById("navLinks").classList.toggle("show");
+    };
+    const links = document.querySelectorAll(".nav-links a");
+    links.forEach(link => {
+      if (link.href === window.location.href) link.classList.add("active");
+    });
+  </script>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { db, auth } from "./firebase-config.js";
+    import { collection, orderBy, query, onSnapshot, updateDoc, doc, getDoc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+    const stockForm = document.getElementById("stockForm");
+    const inventoryList = document.getElementById("inventoryList");
+    const todayDate = new Date().toISOString().split("T")[0];
+    document.getElementById("date").value = todayDate;
+
+    // Load designs
+    const designDropdown = document.getElementById("designDropdown");
+    const designSnap = await getDocs(collection(db, "design"));
+    designSnap.forEach(docSnap => {
+      const d = docSnap.data();
+      const opt = document.createElement("option");
+      opt.value = d.name || docSnap.id;
+      opt.textContent = d.name || docSnap.id;
+      designDropdown.appendChild(opt);
+    });
+
+    // Size selection
+    let selectedSize = null;
+    const sizeButtons = document.querySelectorAll(".size-btn");
+    sizeButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        sizeButtons.forEach(b => b.classList.remove("selected"));
+        btn.classList.add("selected");
+        selectedSize = btn.dataset.size;
+      });
+    });
+
+    // Add stock
+    stockForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const article = document.getElementById("article").value.trim();
+      const design = designDropdown.value;
+      const addedQty = parseInt(document.getElementById("quantity").value);
+      const price = parseFloat(document.getElementById("price").value);
+      const sprice = parseFloat(document.getElementById("sprice").value);
+      const date = document.getElementById("date").value || todayDate;
+
+      if (!selectedSize) {
+        alert("Please select a size!");
+        return;
+      }
+      if (!design) {
+        alert("Please select a design!");
+        return;
+      }
+
+      const docId = `${article}_${design}_${selectedSize}`;
+      const invRef = doc(db, "Inventory", docId);
+      const snap = await getDoc(invRef);
+
+      if (snap.exists()) {
+        const prevCurrent = snap.data().currentQuantity || 0;
+        const prevAdded = snap.data().cumulativeAdded || snap.data().addedQuantity || 0;
+        const newQty = prevCurrent + addedQty;
+        await updateDoc(invRef, {
+          addedQuantity: addedQty,
+          cumulativeAdded: prevAdded + addedQty,
+          currentQuantity: newQty,
+          date
+        });
+      } else {
+        await setDoc(invRef, {
+          article,
+          design,
+          size: selectedSize,
+          addedQuantity: addedQty,
+          cumulativeAdded: addedQty,
+          currentQuantity: addedQty,
+          date
+        });
+      }
+
+      // Save to menu collection (for store panel)
+      const menuRef = doc(db, "menu", docId);
+      await setDoc(menuRef, {
+        name: `${article} (${selectedSize})`,
+        design,
+        size: selectedSize,
+        price,
+        sprice,
+        category: "sanseoul",
+        available: true
+      });
+
+      stockForm.reset();
+      document.getElementById("date").value = todayDate;
+      sizeButtons.forEach(b => b.classList.remove("selected"));
+      selectedSize = null;
+    });
+
+    // Load inventory
+    const invQ = query(collection(db, "Inventory"), orderBy("date", "desc"));
+    onSnapshot(invQ, snapshot => {
+      const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      inventoryList.innerHTML = items.map(item => {
+        const statusClass = (item.currentQuantity < 10) ? "status-low" : "status-ok";
+        const statusText = (item.currentQuantity < 10) ? "Low Stock" : "In Stock";
+        return `
+          <tr>
+            <td>${item.article}</td>
+            <td>${item.design || "-"}</td>
+            <td>${item.size || "-"}</td>
+            <td>${item.addedQuantity || 0}</td>
+            <td>${item.currentQuantity || 0}</td>
+            <td>${item.date}</td>
+            <td class="${statusClass}">${statusText}</td>
+          </tr>
+        `;
+      }).join("");
+    });
+
+    // Fetch payment
+    const payRef = doc(db, "payments", "sanseoul");
+    onSnapshot(payRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        document.getElementById("balance").textContent = data.balance || 0;
+      }
+    });
+
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      try {
+        const currentPage = encodeURIComponent(window.location.pathname);
+        await signOut(auth);
+        window.location.href = `login.html?redirect=${currentPage}`;
+      } catch (err) {
+        console.error("Logout error:", err);
+        alert("Error logging out. Please try again.");
+      }
+    });
+  </script>
+
+  
+</body>
+</html>
