@@ -31,19 +31,111 @@
       flex-direction: column;
     }
 
-    header {
-      display: flex;
-      justify-content: center;
-      background: var(--primary);
-      color: white;
-      padding: 16px 20px;
-      text-align: center;
-      font-size: 2.5rem;
-      font-weight: 700;
-      top: 0;
-      z-index: 100;
-      box-shadow: var(--shadow);
-    }
+  header {
+  background-color: var(--primary);
+  color: white;
+  height: auto;
+  padding: 10px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap; /* allows wrapping on small screens */
+}
+
+/* --- Logo --- */
+.logo {
+  position: absolute;
+  left: 20px;
+  max-height: 40px;
+  height: auto;
+  width: auto;
+  transition: all 0.3s ease;
+}
+
+/* --- Title --- */
+header h1 {
+  font-size: 1.8rem;
+  margin: 0;
+  text-align: center;
+}
+
+/* --- Logout Button --- */
+.logout-container {
+  position: absolute;
+  right: 20px;
+}
+
+.logout-btn {
+  background: #fff;
+  color: var(--primary);
+  border: none;
+  padding: 8px 15px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.logout-btn:hover {
+  background: #f0f0f0;
+}
+
+/* --- Tablet screens --- */
+@media (max-width: 992px) {
+  .logo {
+    left: 15px;
+    max-height: 35px;
+  }
+
+  header h1 {
+    font-size: 1.5rem;
+  }
+
+  .logout-container {
+    right: 15px;
+  }
+}
+
+/* --- Mobile screens --- */
+@media (max-width: 576px) {
+  header {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    height: auto;
+    padding: 10px;
+  }
+
+  .logo {
+    position: relative;
+    left: 0;
+    display: block;
+    margin: 0 auto 5px auto;
+    max-height: 30px;
+  }
+
+  header h1 {
+    font-size: 1.3rem;
+    margin-bottom: 5px;
+  }
+
+  .logout-container {
+    position: relative;
+    right: 0;
+    margin-top: 5px;
+  }
+
+  .logout-btn {
+    padding: 7px 12px;
+    font-size: 0.9rem;
+  }
+}
 
     main {
       padding: 16px;
@@ -232,25 +324,19 @@
       .nav-links.show { display: flex; }
       .nav-toggle { display: block; }
     }
-    .logo {
-      position: absolute;
-      left: 20px;
-      top: 20px;
-      max-height: 30px;
-      height: auto;
-      width: auto;
-    }
+    
   </style>
 </head>
 
 <body>
   <script type="module" src="auth-guard.js"></script>
-  <header>Admin Dashboard 
-    <img src="Sanseoul.png" alt="Logo" class="logo">
-    <div class="logout-container">
-      <button id="logoutBtn">Logout</button>
-    </div>
-  </header>
+  <header>
+  <img src="Sanseoul.png" alt="Logo" class="logo">
+  <h1>Store Sales Panel</h1>
+  <div class="logout-container">
+    <button id="logoutBtn" class="logout-btn">Logout</button>
+  </div>
+</header>
 
   <nav class="admin-nav">
     <div class="nav-container">
